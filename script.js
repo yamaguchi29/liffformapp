@@ -16,6 +16,7 @@ async function initLiff() {
 
 document.getElementById("submit-btn").addEventListener("click", async () => {
   const btn = document.getElementById("submit-btn");
+  const profile = await liff.getProfile();
   const userName = profile.displayName; // LINEの名前
 
   const data = {
