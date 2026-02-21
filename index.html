@@ -1,89 +1,148 @@
-<html>
-<head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>筋トレ管理</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rossorigin="anonymous">
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/themes/base/jquery-ui.min.css">
-</head>
-<body>
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>家計簿入力</title>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+        background-color: #f8f9fa;
+      }
+      .container {
+        max-width: 400px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        text-align: center;
+        color: #28a745;
+      }
+      .item {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      button:disabled {
+        background-color: #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>家計簿記帳</h2>
+      <div class="item">
+        <label>カテゴリー</label>
+        <select id="category">
+          <option value="食費">食費</option>
+          <option value="日用品">日用品</option>
+          <option value="交際費">交際費</option>
+          <option value="交通費">交通費</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+      <div class="item">
+        <label>金額 (円)</label>
+        <input
+          type="number"
+          id="amount"
+          placeholder="1000"
+          inputmode="numeric"
+        />
+      </div>
+      <div class="item">
+        <label>メモ</label>
+        <textarea id="memo" rows="2"></textarea>
+      </div>
+      <button id="submit-btn">スプレッドシートに保存</button>
+    </div>
 
-    <form class="w-75 mx-auto">
-        <p class="mt-3">名前</p>
-        <div>
-            <input class="form-control w-100 mt-1" name="name" placeholder="" required>
-        </div>
-        <p class="mt-3">腕立て</p>
-        <div>
-            <input class="form-control w-100 mt-1" name="udetate" required>
-        </div>
-        <p class="mt-3">腹筋</p>
-        <div>
-            <input class="form-control w-100 mt-1" name="fukkin" required>
-        </div>
-        <p class="mt-3">背筋</p>
-        <div>
-            <input class="form-control w-100 mt-1" name="haikin" required>
-        </div>
-        <p class="mt-3">スクワット</p>
-        <div>
-            <input class="form-control w-100 mt-1" name="sukuwat" required>
-        </div>
-        <input type="submit" class="mt-4 btn btn-primary" value="送信">
-    </form>
-    
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" crossorigin="anonymous"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" crossorigin="anonymous"></script>
-    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2.1/sdk.js"></script>
     <script>
-        
-        $(document).ready(function () {
-            const liffId = "**********-********";
-            initializeLiff(liffId);
-        })
+      // --- 設定項目 ---
+      const LIFF_ID = "あなたのLIFF_ID"; // LINE Developersで発行されたID
+      const GAS_URL = "あなたのGASウェブアプリURL"; // 先ほどデプロイしたURL
 
-        function initializeLiff(liffId) {
-            liff.init({
-                liffId: liffId
-            }).then(() => {
-                initializeApp();
-            }).catch((err) => {
-                console.log('LIFF Initialization failed ', err);
-            });
+      // LIFFの初期化
+      async function initLiff() {
+        try {
+          await liff.init({ liffId: LIFF_ID });
+          if (!liff.isLoggedIn()) {
+            liff.login();
+          }
+        } catch (error) {
+          console.error("LIFF初期化失敗", error);
         }
+      }
 
-        function sendText(text) {
-            liff.sendMessages([{
-                'type': 'text',
-                'text': text
-            }]).then(function () {
-                liff.closeWindow();
-            }).catch(function (error) {
-                window.alert('Failed to send message ' + error);
-            });
-        }
-        
-        const params = (new URL(document.location)).searchParams;
-        const key = params.get('key');
+      // 送信処理
+      document
+        .getElementById("submit-btn")
+        .addEventListener("click", async () => {
+          const btn = document.getElementById("submit-btn");
+          const data = {
+            category: document.getElementById("category").value,
+            amount: document.getElementById("amount").value,
+            memo: document.getElementById("memo").value,
+          };
 
-        $(function () {
-            $('form').submit(function () {
-                const name    = $('input[name="name"]').val();
-                const udetate = $('input[name="udetate"]').val();
-                const fukkin  = $('input[name="fukkin"]').val();
-                const haikin  = $('input[name="haikin"]').val();
-                const sukuwat = $('input[name="sukuwat"]').val();
-                const msg = `${name}\n${udetate}\n${fukkin}\n${haikin}\n${sukuwat}`;
-                sendText(msg);
-                return false;
+          if (!data.amount) {
+            alert("金額を入力してください");
+            return;
+          }
+
+          btn.disabled = true;
+          btn.innerText = "送信中...";
+
+          try {
+            const response = await fetch(GAS_URL, {
+              method: "POST",
+              body: JSON.stringify(data),
             });
+            const result = await response.json();
+
+            if (result.status === "success") {
+              alert("保存完了！");
+              liff.closeWindow(); // 入力後、自動でLINE画面を閉じる
+            } else {
+              alert("エラー: " + result.message);
+            }
+          } catch (error) {
+            alert("送信に失敗しました");
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "スプレッドシートに保存";
+          }
         });
 
+      // 起動時に初期化実行
+      initLiff();
     </script>
-
-</body>
+  </body>
 </html>
-
