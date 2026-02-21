@@ -16,7 +16,10 @@ async function initLiff() {
 
 document.getElementById("submit-btn").addEventListener("click", async () => {
   const btn = document.getElementById("submit-btn");
+  const userName = profile.displayName; // LINEの名前
+
   const data = {
+    userName: userName, // 追加
     category: document.getElementById("category").value,
     amount: document.getElementById("amount").value,
     memo: document.getElementById("memo").value,
@@ -32,24 +35,16 @@ document.getElementById("submit-btn").addEventListener("click", async () => {
   btn.innerText = "送信中...";
 
   try {
-    // mode: 'no-cors' で送信
     await fetch(GAS_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(data),
     });
-
-    // 通信が完了したら（no-corsなので成功とみなす）
-    alert("スプレッドシートに保存しました！");
-    liff.closeWindow(); // LINE画面を閉じる
-    return; // ここで処理を終了させる
+    alert(userName + "さんのデータを保存しました！");
+    liff.closeWindow();
   } catch (error) {
-    console.error(error);
-    alert("送信に失敗しました。");
-  } finally {
-    btn.disabled = false;
-    btn.innerText = "スプレッドシートに保存";
+    alert("送信に失敗しました");
   }
 });
 
