@@ -6,7 +6,10 @@ const GAS_URL =
 async function initLiff() {
   try {
     await liff.init({ liffId: LIFF_ID });
-    if (!liff.isLoggedIn()) {
+
+    // PCブラウザなどの外部ブラウザでログインしていない場合
+    if (!liff.isLoggedIn() && !liff.isInClient()) {
+      // 自動でログイン画面へ（不要ならここを消してボタン側で制御も可）
       liff.login();
     }
   } catch (error) {
@@ -16,36 +19,51 @@ async function initLiff() {
 
 document.getElementById("submit-btn").addEventListener("click", async () => {
   const btn = document.getElementById("submit-btn");
-  const profile = await liff.getProfile();
-  const userName = profile.displayName; // LINEの名前
-
-  const data = {
-    userName: userName, // 追加
-    category: document.getElementById("category").value,
-    amount: document.getElementById("amount").value,
-    memo: document.getElementById("memo").value,
-  };
-
-  if (!data.amount) {
-    alert("金額を入力してください");
-    return;
-  }
-
-  // 二重送信防止
-  btn.disabled = true;
-  btn.innerText = "送信中...";
+  let userName = "不明なユーザー";
 
   try {
+    // LINEアプリ内、またはログイン済みの場合のみプロフィール取得
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      userName = profile.displayName;
+    }
+
+    const amount = document.getElementById("amount").value;
+    if (!amount) {
+      alert("金額を入力してください");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "送信中...";
+
+    const data = {
+      userName: userName,
+      category: document.getElementById("category").value,
+      amount: document.getElementById("amount").value,
+      memo: document.getElementById("memo").value,
+    };
+
     await fetch(GAS_URL, {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "text/plain" },
       body: JSON.stringify(data),
     });
-    alert(userName + "さんのデータを保存しました！");
-    liff.closeWindow();
+
+    alert(userName + "さんのデータを送信しました！");
+
+    // LINEアプリ内なら閉じる、PCなら画面リセット
+    if (liff.isInClient()) {
+      liff.closeWindow();
+    } else {
+      location.reload();
+    }
   } catch (error) {
-    alert("送信に失敗しました");
+    console.error(error);
+    alert("エラーが発生しました");
+    btn.disabled = false;
+    btn.innerText = "スプレッドシートに保存";
   }
 });
 
