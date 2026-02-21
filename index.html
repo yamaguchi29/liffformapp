@@ -4,56 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>家計簿入力</title>
-    <script src="./test.js"></script>
-    <style>
-      body {
-        font-family: sans-serif;
-        margin: 20px;
-        background-color: #f8f9fa;
-      }
-      .container {
-        max-width: 400px;
-        margin: auto;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-      h2 {
-        text-align: center;
-        color: #28a745;
-      }
-      .item {
-        margin-bottom: 15px;
-      }
-      label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-      }
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 10px;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        box-sizing: border-box;
-      }
-      button {
-        width: 100%;
-        padding: 12px;
-        background-color: #28a745;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-      }
-      button:disabled {
-        background-color: #ccc;
-      }
-    </style>
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   </head>
   <body>
     <div class="container">
@@ -84,66 +36,6 @@
       <button id="submit-btn">スプレッドシートに保存</button>
     </div>
 
-    <script>
-      // --- 設定項目 ---
-      const LIFF_ID = "2009133124-tG6paVoL"; // LINE Developersで発行されたID
-      const GAS_URL =
-        "https://script.google.com/macros/s/AKfycbwNQckWtUJ08ycrH3FCH4eslU_LG9cMKSf49ABAtX8KQ0rVcXb0vFsnLrmxAfESt1pqaA/exec"; // 先ほどデプロイしたURL
-
-      // LIFFの初期化
-      async function initLiff() {
-        try {
-          await liff.init({ liffId: LIFF_ID });
-          if (!liff.isLoggedIn()) {
-            liff.login();
-          }
-        } catch (error) {
-          console.error("LIFF初期化失敗", error);
-        }
-      }
-
-      // 送信処理
-      document
-        .getElementById("submit-btn")
-        .addEventListener("click", async () => {
-          const btn = document.getElementById("submit-btn");
-          const data = {
-            category: document.getElementById("category").value,
-            amount: document.getElementById("amount").value,
-            memo: document.getElementById("memo").value,
-          };
-
-          if (!data.amount) {
-            alert("金額を入力してください");
-            return;
-          }
-
-          btn.disabled = true;
-          btn.innerText = "送信中...";
-
-          try {
-            const response = await fetch(GAS_URL, {
-              method: "POST",
-              body: JSON.stringify(data),
-            });
-            const result = await response.json();
-
-            if (result.status === "success") {
-              alert("保存完了！");
-              liff.closeWindow(); // 入力後、自動でLINE画面を閉じる
-            } else {
-              alert("エラー: " + result.message);
-            }
-          } catch (error) {
-            alert("送信に失敗しました");
-          } finally {
-            btn.disabled = false;
-            btn.innerText = "スプレッドシートに保存";
-          }
-        });
-
-      // 起動時に初期化実行
-      initLiff();
-    </script>
+    <script src="script.js"></script>
   </body>
 </html>
